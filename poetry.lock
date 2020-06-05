@@ -310,8 +310,11 @@ version = "3.1.0"
 docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
+[extras]
+testing = ["pytest", "pytest-flake8"]
+
 [metadata]
-content-hash = "2c5d0c34330c1908128667114e6341b26bb67e44faab4260be82f8bf30de2271"
+content-hash = "f172cb3ea683cf716ba1a58d542e8a3901788d4dcee17fc834801da82d5b4b0c"
 python-versions = "^3.6"
 
 [metadata.files]

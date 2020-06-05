@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from abc import ABCMeta, abstractmethod
 from hashlib import sha224
 from pathlib import Path
 from threading import Lock
@@ -8,27 +7,20 @@ import weakref
 from jsonschema import validate, ValidationError
 import yaml
 
-from packratt.registry import load_registry, SCHEMA
+from packratt.directories import user_cache_dir
+from packratt.registry import load_registry, ENTRY_SCHEMA
 
-ENTRY_SCHEMA = {**SCHEMA, "entry": {"type": {"$ref": "/definitions/entry"}}}
 
-class CacheEntry(metaclass=ABCMeta):
-    @abstractmethod
-    def download(self, destination):
-        pass
-
-    @abstractmethod
-    def __eq__(self, other):
-        pass
-
-    @property
-    @abstractmethod
-    def type(self):
-        pass
+def validate_entry(entry):
+    try:
+        return validate(entry, ENTRY_SCHEMA)
+    except ValidationError as e:
+        raise ValueError("%s is not a valid entry" % entry) from e
 
 
 _cache_lock = Lock()
 _cache_cache = weakref.WeakValueDictionary()
+
 
 class CacheMetaClass(type):
     """
@@ -52,7 +44,6 @@ class Cache(metaclass=CacheMetaClass):
 
     def __reduce__(self):
         return (Cache, (self.cache_dir,))
-
 
     @staticmethod
     def key_dir(key) -> Path:
@@ -87,10 +78,7 @@ class Cache(metaclass=CacheMetaClass):
             raise TypeError("value must be a dict")
 
         # Is this a valid cache entry dictionary?
-        try:
-            validate(value, ENTRY_SCHEMA)
-        except ValidationError as e:
-            raise ValueError("%s is not a valid entry" % value) from e
+        validate_entry(value)
 
         entry_dir = self.cache_key_dir(key)
 
@@ -101,7 +89,6 @@ class Cache(metaclass=CacheMetaClass):
 
         with open(entry_dir / "entry.yaml", "w") as f:
             f.write(yaml.safe_dump(value))
-
 
     def __getitem__(self, key):
         """
@@ -136,8 +123,6 @@ class Cache(metaclass=CacheMetaClass):
         else:
             self.__setitem__(key, entry)
 
-
-        entry['size'] = 0
         entry['dir'] = entry_dir
 
         return entry
@@ -145,42 +130,27 @@ class Cache(metaclass=CacheMetaClass):
 
 def cache_factory(cache_dir=None):
     if cache_dir is None:
-        from packratt.directories import user_cache_dir as cache_dir
+        return Cache(cache_dir)
 
-    return Cache(cache_dir)
+    return Cache(user_cache_dir)
 
 
-def cache_entry_from_dict(entry):
-    try:
-        entry_type = entry['type']
-    except KeyError:
-        raise ValueError("entry dictionary must contain a type key")
+app_cache = None
 
-    if entry_type == "google":
-        from packratt.google_drive import GoogleDriveCacheEntry
 
-        try:
-            file_id = entry["file_id"]
-            file_hash = entry["hash"]
-            filename = entry["filename"]
-        except KeyError as e:
-            raise ValueError("google entry must contain the following keys: "
-                             "file_id, hash, filename. missing %s" % str(e))
+def get_cache():
+    global app_cache
 
-        return GoogleDriveCacheEntry(file_id, file_hash, filename)
+    if app_cache is None:
+        app_cache = Cache(user_cache_dir)
 
-    elif entry_type == "url":
-        from packratt.url import UrlCacheEntry
+    return app_cache
 
-        try:
-            url = entry["url"]
-            file_hash = entry["hash"]
-            filename = entry["filename"]
-        except KeyError as e:
-            raise ValueError("url entry must contain the following keys: "
-                             "url, hash, filename. missing %s" % str(e))
 
-        return UrlCacheEntry(url, file_hash, filename)
+def set_cache(cache):
+    global app_cache
 
-    else:
-        raise ValueError("Invalid entry_type %s" % entry_type)
+    if not isinstance(cache, Cache):
+        raise TypeError("cache must be of type Cache")
+
+    app_cache = cache

@@ -1,30 +1,50 @@
 # -*- coding: utf-8 -*-
 import argparse
+import logging
 import sys
 
-from packratt.directories import user_data_dir
-from packratt.cache import Cache
+from packratt.dispatch import Dispatch
+
+log = logging.getLogger(__name__)
+
+logging.basicConfig(level=logging.DEBUG)
+
+commands = Dispatch()
+
+
+@commands.register("get")
+def get(args):
+    from packratt.interface import get
+    return get(args.key, args.destination)
+
 
 def create_parser():
     p = argparse.ArgumentParser()
     sp = p.add_subparsers(help='command', dest='command')
-    clean = sp.add_parser('clean')
-    verify = sp.add_parser('verify')
+
+    # Get a data product
+    get = sp.add_parser('get')
+    get.add_argument("key")
+    get.add_argument("destination", default=".", nargs="?")
+
     return p
 
 
-def clean(args):
-    pass
-
-
 def _run(args):
-    args = create_parser().parse_args(args)
-    cache = Cache(user_data_dir)
+    parser = create_parser()
+    args = parser.parse_args(args)
+
+    if args.command:
+        commands(args.command, args)
+    else:
+        parser.print_help()
 
     return 0
 
+
 def run():
     return _run(sys.argv[1:])
+
 
 if __name__ == "__main__":
     sys.exit(run())

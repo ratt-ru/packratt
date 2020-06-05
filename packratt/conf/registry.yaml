@@ -1,11 +1,11 @@
-qux:
+'/test/ms/2020-06-04/google/smallest_ms.tar.gz':
   type: google
-  file_id: '123456'
-  hash: '123456'
-  filename: qux.ms.tar.gz
+  file_id: 1wjZoh7OAIVEjYuTmg9dLAFiLoyehnIcL
+  hash: 4d548b22331fb3cd3256b1b4f37a41cf
+  filename: smallest_ms.tar.gz
 
-baz:
+'/test/ms/2020-06-04/elwood/smallest_ms.tar.gz':
   type: url
-  url: "http://www.google.com"
-  hash: '123456'
-  filename: baz.ms.tar.gz
+  url: ftp://elwood.ru.ac.za/pub/sjperkins/data/test/smallest_ms.tar.gz
+  hash: 4d548b22331fb3cd3256b1b4f37a41cf
+  filename: smallest_ms.tar.gz
