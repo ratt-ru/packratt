@@ -1,4 +1,5 @@
-from contextlib import closing
+from contextlib import closing, contextmanager
+from ftplib import FTP
 import hashlib
 from urllib.parse import urlparse
 import urllib.request as request
@@ -10,6 +11,34 @@ from packratt.dispatch import Dispatch
 downloaders = Dispatch()
 
 CHUNK_SIZE = 2**20
+
+
+@contextmanager
+def open_and_hash_file(filename):
+    md5hash = hashlib.md5()
+    size = 0
+
+    if filename.is_file():
+        # File exists, hash contents and determine existing size
+        # This also moves the file pointer to the end of the file
+        f = open(filename, "rb+")
+
+        while True:
+            chunk = f.read(CHUNK_SIZE)
+
+            if not chunk:
+                break
+
+            md5hash.update(chunk)
+            size += len(chunk)
+    else:
+        # Open a new file for writing
+        f = open(filename, "wb")
+
+    try:
+        yield size, md5hash, f
+    finally:
+        f.close()
 
 
 @downloaders.register("google")
@@ -27,39 +56,49 @@ def download_google_drive(entry):
             # Re-request with confirmation token
             for key, value in response.cookies.items():
                 if key.startswith('download_warning'):
+                    params['confim'] = value
                     response.close()
-                    params = {'id': entry['file_id'], 'confirm': value}
                     response = session.get(URL, params=params, stream=True)
                     break
 
-            with open(filename, "wb") as f:
-                hash_md5 = hashlib.md5()
+
+            with open_and_hash_file(filename) as (size, md5hash, f):
+                if size > 0:
+                    # Some of this file has already been downloaded
+                    # Request the rest of it
+                    total_size = response.headers['Content-Length']
+                    response.close()
+                    headers = {'Range': 'bytes=%d-%d' % (size, total_size)}
+                    response = session.get(URL, params=params,
+                                           headers=headers,
+                                           stream=True)
 
                 for chunk in response.iter_content(CHUNK_SIZE):
                     if chunk:  # filter out keep-alive new chunks
-                        hash_md5.update(chunk)
+                        md5hash.update(chunk)
                         f.write(chunk)
 
-                return hash_md5.hexdigest()
+                return md5hash.hexdigest()
         finally:
             response.close()
 
 
-def download_ftp(entry, filename):
-    with closing(request.urlopen(entry['url'])) as response:
-        hash_md5 = hashlib.md5()
+def download_ftp(entry, url, filename):
+    with open_and_hash_file(filename) as (size, md5hash, f):
+        ftp = FTP(url.hostname)
 
-        with open(filename, 'wb') as f:
-            while True:
-                chunk = response.read(CHUNK_SIZE)
+        def callback(data):
+            f.write(data)
+            md5hash.update(data)
 
-                if not chunk:
-                    break
+        try:
+            ftp.login(url.username, url.password)
+            ftp.retrbinary("RETR %s" % url.path, callback,
+                            blocksize=CHUNK_SIZE, rest=size)
+        finally:
+            ftp.quit()
 
-                hash_md5.update(chunk)
-                f.write(chunk)
-
-        return hash_md5.hexdigest()
+        return md5hash.hexdigest()
 
 
 @downloaders.register("url")
@@ -67,18 +106,18 @@ def download_url(entry):
     filename = entry['dir'] / entry['filename']
 
     # requests doesn't handle ftp
-    if urlparse(entry['url']).scheme == "ftp":
-        return download_ftp(entry, filename)
+    url = urlparse(entry['url'])
+
+    if url.scheme == "ftp":
+        return download_ftp(entry, url, filename)
 
     # Use requests
     with requests.Session() as session:
         with session.get(entry['url'], stream=True) as response:
-            with open(filename, "wb") as f:
-                hash_md5 = hashlib.md5()
-
+            with open_and_hash_file(filename) as (size, md5hash, f):
                 for chunk in response.iter_content(CHUNK_SIZE):
                     if chunk:  # filter out keep-alive new chunks
-                        hash_md5.update(chunk)
+                        md5hash.update(chunk)
                         f.write(chunk)
 
-                return hash_md5.hexdigest()
+                return md5hash.hexdigest()
