@@ -2,13 +2,20 @@
   type: google
   file_id: 1wjZoh7OAIVEjYuTmg9dLAFiLoyehnIcL
   hash: 4d548b22331fb3cd3256b1b4f37a41cf
+  description: >
+    Small testing Measurement Set, stored on Google Drive
 
 '/test/ms/2020-06-04/elwood/smallest_ms.tar.gz':
   type: url
   url: ftp://elwood.ru.ac.za/pub/sjperkins/data/test/smallest_ms.tar.gz
   hash: 4d548b22331fb3cd3256b1b4f37a41cf
+  description: >
+    Small testing Measurement Set, stored on elwood's FTP server
 
 '/test/ms/2020-06-04/elwood/smallest_ms_truncated.tar.gz':
   type: url
   url: ftp://elwood.ru.ac.za/pub/sjperkins/data/test/smallest_ms_truncated.tar.gz
   hash: 42e49e895d1f578c6a7e9b1684a61bef
+  description: >
+    Small testing Measurement Set, stored on elwood's FTP server,
+    truncated at 100,000 bytes

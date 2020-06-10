@@ -25,8 +25,8 @@ def test_get(google_key, elwood_key, test_cache, tmp_path_factory):
     "elwood_key", ['/test/ms/2020-06-04/elwood/smallest_ms.tar.gz'])
 @pytest.mark.parametrize(
     "google_key", ['/test/ms/2020-06-04/google/smallest_ms.tar.gz'])
-def test_get_partial_ftp(partial_key, google_key, elwood_key,
-                         test_cache, registry, tmp_path_factory):
+def test_get_partial(partial_key, google_key, elwood_key,
+                     test_cache, registry, tmp_path_factory):
     md5 = get(partial_key, tmp_path_factory.mktemp("ignore"))
     assert md5 == registry[partial_key]['hash']
 
