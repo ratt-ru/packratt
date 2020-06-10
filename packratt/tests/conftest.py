@@ -1,4 +1,5 @@
 from packratt.cache import get_cache, set_cache, Cache
+from packratt.registry import load_registry
 
 import pytest
 
@@ -21,3 +22,8 @@ def test_cache(tmp_path_factory):
         yield new_cache
     finally:
         set_cache(old_cache)
+
+
+@pytest.fixture(scope="session")
+def registry():
+    return load_registry()
