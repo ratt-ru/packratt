@@ -45,7 +45,7 @@ def get(key, destination, entry=None):
         # Create the destination directory
         destination.mkdir(parents=True, exist_ok=True)
 
-    filename = entry['dir'] / entry['filename']
+    filename = entry['dir'] / Path(key).name
 
     if filename.exists():
         # TODO(sjperkins):
@@ -53,7 +53,7 @@ def get(key, destination, entry=None):
         md5_hash = entry['hash']
     else:
         # Download to the destination
-        md5_hash = downloaders(entry['type'], entry)
+        md5_hash = downloaders(entry['type'], key, entry)
 
         if not md5_hash == entry['hash']:
             raise ValueError("md5hash does not agree. %s vs %s"

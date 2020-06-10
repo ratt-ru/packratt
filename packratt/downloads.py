@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from ftplib import FTP
 import hashlib
 import logging
+from pathlib import Path
 import shutil
 from urllib.parse import urlparse
 
@@ -45,10 +46,11 @@ def open_and_hash_file(filename):
         f.close()
 
 
-def requests_partial_download(entry, url, session,
+def requests_partial_download(key, entry, url, session,
                               response, params=None):
-    part_filename = entry['dir'] / '.'.join((entry['filename'], 'partial'))
-    filename = entry['dir'] / entry['filename']
+    filename = Path(key).name
+    part_filename = entry['dir'] / '.'.join((filename, 'partial'))
+    filename = entry['dir'] / filename
 
     if params is None:
         params = {}
@@ -74,7 +76,7 @@ def requests_partial_download(entry, url, session,
 
 
 @downloaders.register("google")
-def download_google_drive(entry):
+def download_google_drive(key, entry):
     url = "https://drive.google.com/uc?export=download"
     params = {'id': entry['file_id']}
 
@@ -91,16 +93,17 @@ def download_google_drive(entry):
                     response = session.get(url, params=params, stream=True)
                     break
 
-            return requests_partial_download(entry, url,
+            return requests_partial_download(key, entry, url,
                                              session, response,
                                              params=params)
         finally:
             response.close()
 
 
-def download_ftp(entry, url):
-    part_filename = entry['dir'] / '.'.join((entry['filename'], 'partial'))
-    filename = entry['dir'] / entry['filename']
+def download_ftp(key, entry, url):
+    filename = Path(key).name
+    part_filename = entry['dir'] / '.'.join((filename, 'partial'))
+    filename = entry['dir'] / filename
 
     with open_and_hash_file(part_filename) as (size, md5hash, f):
         if size > 0:
@@ -125,19 +128,19 @@ def download_ftp(entry, url):
 
 
 @downloaders.register("url")
-def download_url(entry):
+def download_url(key, entry):
     # requests doesn't handle ftp
     parsed_url = urlparse(entry['url'])
 
     if parsed_url.scheme == "ftp":
-        return download_ftp(entry, parsed_url)
+        return download_ftp(key, entry, parsed_url)
 
     # Use requests for (presumably) http cases
     with requests.Session() as session:
         response = session.get(entry['url'], stream=True)
 
         try:
-            return requests_partial_download(entry, entry['url'],
+            return requests_partial_download(key, entry, entry['url'],
                                              session, response)
         finally:
             response.close()
