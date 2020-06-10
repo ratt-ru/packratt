@@ -1,16 +1,20 @@
-from contextlib import closing, contextmanager
+from contextlib import contextmanager
 from ftplib import FTP
 import hashlib
+import logging
+import shutil
 from urllib.parse import urlparse
-import urllib.request as request
 
 import requests
 
 from packratt.dispatch import Dispatch
 
+log = logging.getLogger(__name__)
+
 downloaders = Dispatch()
 
-CHUNK_SIZE = 2**20
+# 32k chunks
+CHUNK_SIZE = 2**15
 
 
 @contextmanager
@@ -41,15 +45,41 @@ def open_and_hash_file(filename):
         f.close()
 
 
-@downloaders.register("google")
-def download_google_drive(entry):
+def requests_partial_download(entry, url, session,
+                              response, params=None):
+    part_filename = entry['dir'] / '.'.join((entry['filename'], 'partial'))
     filename = entry['dir'] / entry['filename']
 
-    URL = URL = "https://drive.google.com/uc?export=download"
+    if params is None:
+        params = {}
+
+    with open_and_hash_file(part_filename) as (size, md5hash, f):
+        if size > 0:
+            log.info("Resuming download of %s at %d", filename, size)
+            # Some of this file has already been downloaded
+            # Request the rest of it
+            total_size = int(response.headers['Content-Length'])
+            response.close()
+            headers = {'Range': 'bytes=%d-%d' % (size, total_size)}
+            response = session.get(url, params=params,
+                                   headers=headers, stream=True)
+
+        for chunk in response.iter_content(CHUNK_SIZE):
+            if chunk:  # filter out keep-alive new chunks
+                md5hash.update(chunk)
+                f.write(chunk)
+
+    shutil.move(part_filename, filename)
+    return md5hash.hexdigest()
+
+
+@downloaders.register("google")
+def download_google_drive(entry):
+    url = "https://drive.google.com/uc?export=download"
     params = {'id': entry['file_id']}
 
     with requests.Session() as session:
-        response = session.get(URL, params=params, stream=True)
+        response = session.get(url, params=params, stream=True)
 
         try:
             # Look for a token indicating a large file
@@ -58,33 +88,24 @@ def download_google_drive(entry):
                 if key.startswith('download_warning'):
                     params['confim'] = value
                     response.close()
-                    response = session.get(URL, params=params, stream=True)
+                    response = session.get(url, params=params, stream=True)
                     break
 
-
-            with open_and_hash_file(filename) as (size, md5hash, f):
-                if size > 0:
-                    # Some of this file has already been downloaded
-                    # Request the rest of it
-                    total_size = response.headers['Content-Length']
-                    response.close()
-                    headers = {'Range': 'bytes=%d-%d' % (size, total_size)}
-                    response = session.get(URL, params=params,
-                                           headers=headers,
-                                           stream=True)
-
-                for chunk in response.iter_content(CHUNK_SIZE):
-                    if chunk:  # filter out keep-alive new chunks
-                        md5hash.update(chunk)
-                        f.write(chunk)
-
-                return md5hash.hexdigest()
+            return requests_partial_download(entry, url,
+                                             session, response,
+                                             params=params)
         finally:
             response.close()
 
 
-def download_ftp(entry, url, filename):
-    with open_and_hash_file(filename) as (size, md5hash, f):
+def download_ftp(entry, url):
+    part_filename = entry['dir'] / '.'.join((entry['filename'], 'partial'))
+    filename = entry['dir'] / entry['filename']
+
+    with open_and_hash_file(part_filename) as (size, md5hash, f):
+        if size > 0:
+            log.info("Resuming download of %s at %d", part_filename, size)
+
         ftp = FTP(url.hostname)
 
         def callback(data):
@@ -94,7 +115,9 @@ def download_ftp(entry, url, filename):
         try:
             ftp.login(url.username, url.password)
             ftp.retrbinary("RETR %s" % url.path, callback,
-                            blocksize=CHUNK_SIZE, rest=size)
+                           blocksize=CHUNK_SIZE, rest=size)
+
+            shutil.move(part_filename, filename)
         finally:
             ftp.quit()
 
@@ -103,21 +126,18 @@ def download_ftp(entry, url, filename):
 
 @downloaders.register("url")
 def download_url(entry):
-    filename = entry['dir'] / entry['filename']
-
     # requests doesn't handle ftp
-    url = urlparse(entry['url'])
+    parsed_url = urlparse(entry['url'])
 
-    if url.scheme == "ftp":
-        return download_ftp(entry, url, filename)
+    if parsed_url.scheme == "ftp":
+        return download_ftp(entry, parsed_url)
 
-    # Use requests
+    # Use requests for (presumably) http cases
     with requests.Session() as session:
-        with session.get(entry['url'], stream=True) as response:
-            with open_and_hash_file(filename) as (size, md5hash, f):
-                for chunk in response.iter_content(CHUNK_SIZE):
-                    if chunk:  # filter out keep-alive new chunks
-                        md5hash.update(chunk)
-                        f.write(chunk)
+        response = session.get(entry['url'], stream=True)
 
-                return md5hash.hexdigest()
+        try:
+            return requests_partial_download(entry, entry['url'],
+                                             session, response)
+        finally:
+            response.close()
