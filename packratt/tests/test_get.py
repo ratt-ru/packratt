@@ -9,11 +9,12 @@ import shutil
 @pytest.mark.parametrize(
     "google_key", ['1.5M_water.tar.gz'])
 def test_get_entry(google_key, tmp_path_factory):
-    entry = {"type": 'google',
-             "file_id": '1D62EwpZOL7I5MBVh5sskj7w9e-YaCSzX',
-             "hash": ('3d6ab84b5ce54e8ac5b4e783458caf2a'
-                      'faaf5e8e3cca3ee082ae431498bd4b37'),
-             "description": '1.5M water'}
+    entry = {
+        "type": 'google',
+        "file_id": '1D62EwpZOL7I5MBVh5sskj7w9e-YaCSzX',
+        "hash": ('3d6ab84b5ce54e8ac5b4e783458caf2a'
+                 'faaf5e8e3cca3ee082ae431498bd4b37'),
+        "description": '1.5M water'}
     google_entry_dest = tmp_path_factory.mktemp("google")
     google_entry_sha256 = get(google_key, google_entry_dest, entry=entry)
 
