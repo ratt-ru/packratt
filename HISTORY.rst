@@ -4,6 +4,7 @@ History
 
 X.Y.Z (YYYY-MM-DD)
 ------------------
+* Use SHA256 instead of MD5 for verifying file integrity (:pr:`12`)
 * Add README file (:pr: `11`) and minor fixes
 * Use HTTPAdapter with retry strategy (:pr: `6`)
 * Updated registry to allow user defined registry.yaml (:pr: `8`)
