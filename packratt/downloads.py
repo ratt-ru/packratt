@@ -40,7 +40,7 @@ def retry_strategy():
 
 @contextmanager
 def open_and_hash_file(filename):
-    md5hash = hashlib.md5()
+    sha256hash = hashlib.sha256()
     size = 0
 
     if filename.is_file():
@@ -54,14 +54,14 @@ def open_and_hash_file(filename):
             if not chunk:
                 break
 
-            md5hash.update(chunk)
+            sha256hash.update(chunk)
             size += len(chunk)
     else:
         # Open a new file for writing
         f = open(filename, "wb")
 
     try:
-        yield size, md5hash, f
+        yield size, sha256hash, f
     finally:
         f.close()
 
@@ -75,7 +75,7 @@ def requests_partial_download(key, entry, url, session,
     if params is None:
         params = {}
 
-    with open_and_hash_file(part_filename) as (size, md5hash, f):
+    with open_and_hash_file(part_filename) as (size, sha256hash, f):
         if size > 0:
             log.info("Resuming download of %s at %d", filename, size)
             # Some of this file has already been downloaded
@@ -94,11 +94,11 @@ def requests_partial_download(key, entry, url, session,
 
             for chunk in response.iter_content(CHUNK_SIZE):
                 if chunk:  # filter out keep-alive new chunks
-                    md5hash.update(chunk)
+                    sha256hash.update(chunk)
                     f.write(chunk)
 
     shutil.move(part_filename, filename)
-    return md5hash.hexdigest()
+    return sha256hash.hexdigest()
 
 
 @downloaders.register("google")
@@ -131,7 +131,7 @@ def download_ftp(key, entry, url):
     part_filename = entry['dir'] / '.'.join((filename, 'partial'))
     filename = entry['dir'] / filename
 
-    with open_and_hash_file(part_filename) as (size, md5hash, f):
+    with open_and_hash_file(part_filename) as (size, sha256hash, f):
         if size > 0:
             log.info("Resuming download of %s at %d", part_filename, size)
 
@@ -139,7 +139,7 @@ def download_ftp(key, entry, url):
 
         def callback(data):
             f.write(data)
-            md5hash.update(data)
+            sha256hash.update(data)
 
         try:
             ftp.login(url.username, url.password)
@@ -150,7 +150,7 @@ def download_ftp(key, entry, url):
         finally:
             ftp.quit()
 
-        return md5hash.hexdigest()
+        return sha256hash.hexdigest()
 
 
 @downloaders.register("url")

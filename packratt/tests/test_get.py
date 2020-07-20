@@ -11,12 +11,12 @@ import shutil
 def test_get_entry(google_key, tmp_path_factory):
     entry = {"type": 'google',
              "file_id": '1D62EwpZOL7I5MBVh5sskj7w9e-YaCSzX',
-             "hash": '2acf32e159ed6076130d4c2680eca155',
+             "hash": '3d6ab84b5ce54e8ac5b4e783458caf2afaaf5e8e3cca3ee082ae431498bd4b37',
              "description": '1.5M water'}
     google_entry_dest = tmp_path_factory.mktemp("google")
-    google_entry_md5 = get(google_key, google_entry_dest, entry=entry)
+    google_entry_sha256 = get(google_key, google_entry_dest, entry=entry)
 
-    assert google_entry_md5 == entry['hash']
+    assert google_entry_sha256 == entry['hash']
 
 
 @pytest.mark.parametrize(
@@ -27,10 +27,10 @@ def test_get(google_key, elwood_key, test_cache, tmp_path_factory):
     google_dest = tmp_path_factory.mktemp("google")
     elwood_dest = tmp_path_factory.mktemp("elwood")
 
-    google_md5 = get(google_key, google_dest)
-    elwood_md5 = get(elwood_key, elwood_dest)
+    google_sha256 = get(google_key, google_dest)
+    elwood_sha256 = get(elwood_key, elwood_dest)
 
-    assert google_md5 == elwood_md5
+    assert google_sha256 == elwood_sha256
 
 
 @pytest.mark.parametrize(
@@ -41,8 +41,8 @@ def test_get(google_key, elwood_key, test_cache, tmp_path_factory):
     "google_key", ['/test/ms/2020-06-04/google/smallest_ms.tar.gz'])
 def test_get_partial(partial_key, google_key, elwood_key,
                      test_cache, registry, tmp_path_factory):
-    md5 = get(partial_key, tmp_path_factory.mktemp("ignore"))
-    assert md5 == registry[partial_key]['hash']
+    sha256 = get(partial_key, tmp_path_factory.mktemp("ignore"))
+    assert sha256 == registry[partial_key]['hash']
 
     partial_file = Path(test_cache.cache_key_dir(partial_key),
                         Path(partial_key).name)

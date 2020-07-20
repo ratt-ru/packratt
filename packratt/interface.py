@@ -52,15 +52,15 @@ def get(key, destination, entry=None):
     if filename.exists():
         # TODO(sjperkins):
         # This is a massive assumption, what about partial downloads etc.
-        md5_hash = entry['hash']
+        sha256_hash = entry['hash']
     else:
         # Download to the destination
-        md5_hash = downloaders(entry['type'], key, entry)
+        sha256_hash = downloaders(entry['type'], key, entry)
 
-        if not md5_hash == entry['hash']:
-            raise ValueError("md5hash does not agree. %s vs %s"
-                             % (md5_hash, entry['hash']))
+        if not sha256_hash == entry['hash']:
+            raise ValueError("sha256hash does not agree. %s vs %s"
+                             % (sha256_hash, entry['hash']))
 
     shutil.unpack_archive(str(filename), destination)
 
-    return md5_hash
+    return sha256_hash
