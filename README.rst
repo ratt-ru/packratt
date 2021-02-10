@@ -84,7 +84,7 @@ Creating a custom registry schema
 Users can define their own registry file containing custom entries.
 It should be placed in ``$HOME/.config/packratt/registry.yaml``.
 Each entry should refer to a single file. If one has a Measurement Set,
-for example, one should tar and gzip the MS directory up
+for example, one should tar and gzip the MS directory up:
 
 .. code:: bash
 
@@ -107,6 +107,7 @@ the custom registry:
 This should now be available for download by packratt and for use
 by an application:
 
+
 .. code:: python
 
    import packratt
@@ -121,6 +122,17 @@ by an application:
       # Untar it
       with tarfile.open(dest / "WSRT.tar.gz") as tf:
          tf.extractall()
+
+Adding entries to the packratt default registry
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you think your dataset is useful and you would like to make it public,
+please consider opening a Pull Request on the packratt repository that
+modifies the `default registry
+<https://github.com/ratt-ru/packratt/blob/master/packratt/conf/registry.yaml_>`_.
+
+
+
 
 Contributing
 ------------
