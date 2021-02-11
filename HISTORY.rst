@@ -2,6 +2,11 @@
 History
 =======
 
+
+0.1.3 (2020-02-11)
+------------------
+* Update README with custom registry instructions (:pr:`15`)
+
 0.1.2 (2020-10-06)
 ------------------
 * Use SHA256 instead of MD5 for verifying file integrity (:pr:`12`)
