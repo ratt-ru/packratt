@@ -1,14 +1,14 @@
 packratt
 ========
 
-``packratt`` is an application and a python package for downloading and
+``packratt`` is both an application and a Python package for downloading and
 caching Radio Astronomy products, primarily to facilitate testing Radio
 Astronomy software.
 
 Installing
 ----------
 
-For the lastest stable release
+To install the latest stable release:
 
 .. code:: bash
 
@@ -17,7 +17,7 @@ For the lastest stable release
 Usage
 -----
 
-Use an an linux application
+Use as a linux application
 
 .. code:: bash
 
@@ -26,7 +26,7 @@ Use an an linux application
    packratt get /beams/<telescope>/<filename> <target_dir>
    packratt get /gains/<telescope>/<observation_date>/<filename> <target_dir>
 
-Use within a Python software package
+Use within a Python software package:
 
 .. code:: python
 
@@ -92,8 +92,8 @@ for example, one should tar and gzip the MS directory up:
     $ sha256sum WSRT.MS.tar.gz
     7cc6cfb657a1c495849e22f2f720bf1fd4555b106a5d7d23f91bd45cb460ae9a  WSRT.MS.tar.gz
 
-Upload the tarfile to Google Drive or HTTPS/FTP server and create an entry in
-the custom registry:
+Upload the tarfile to Google Drive or an HTTPS/FTP server
+and create an entry in the custom registry:
 
 .. code:: yaml
 
@@ -104,7 +104,7 @@ the custom registry:
         description: >
             My Measurement Set
 
-This should now be available for download by packratt and for use
+The tarfile is now available for download by packratt and for use
 by an application:
 
 
