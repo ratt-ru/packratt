@@ -3,8 +3,9 @@ History
 =======
 
 
-0.1.3 (2020-02-11)
+0.1.3 (2020-02-16)
 ------------------
+* Prevent cache entry mutation (:pr:`17`)
 * Update README with custom registry instructions (:pr:`15`)
 
 0.1.2 (2020-10-06)
