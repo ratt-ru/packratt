@@ -123,9 +123,7 @@ class Cache(metaclass=CacheMetaClass):
         else:
             self.__setitem__(key, entry)
 
-        entry['dir'] = entry_dir
-
-        return entry
+        return {**entry, "dir": entry_dir}
 
 
 def cache_factory(cache_dir=None):
