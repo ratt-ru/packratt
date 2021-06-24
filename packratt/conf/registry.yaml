@@ -19,3 +19,10 @@
   description: >
     Small testing Measurement Set, stored on elwood's FTP server,
     truncated at 100,000 bytes
+
+'/test/ms/2021-06-24/elwood/test_ascii_1h60.0s.MS.tar':
+  type: url
+  url: ftp://elwood.ru.ac.za/pub/bester/test_ascii_1h60.0s.MS.tar
+  hash: 6ec4c298328ebbb0681878ecb693f77d3ba0c8c2714491c1b826af0ec194dd34
+  description: >
+    Larger (60 time stamps + 8 channels) empty Measurement Set, stored on elwood's FTP server
