@@ -15,7 +15,7 @@ package_data = \
 install_requires = \
 ['appdirs>=1.4.4,<2.0.0',
  'jsonschema>=3.2.0,<4.0.0',
- 'pyyaml>=5.3.1,<6.0.0',
+ 'pyyaml>=5.3.1',
  'requests>=2.23.0,<3.0.0']
 
 extras_require = \
